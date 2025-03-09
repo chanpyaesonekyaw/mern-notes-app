@@ -22,6 +22,8 @@ const login = () => {
             return;
         }
         setError('');
+
+        // Login Api Call 
     }
 
     return (
@@ -47,7 +49,7 @@ const login = () => {
                         <button type='submit' className='btn-primary cursor-pointer'>Login</button>
 
                         <p className='text-sm text-center mt-3'>
-                            Note register yet?{' '}
+                            Not register yet?{' '}
                             <Link to='/signup' className='font-medium text-primary underline'>
                                 Create an Account
                             </Link>
