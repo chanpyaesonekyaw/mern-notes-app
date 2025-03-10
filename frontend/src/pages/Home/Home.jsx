@@ -5,6 +5,8 @@ import { MdAdd } from 'react-icons/md'
 import AddEditNotes from './AddEditNotes'
 import Modal from 'react-modal'
 
+Modal.setAppElement('#root');
+
 const Home = () => {
   const [openAddEditModal, setOpenAddEditModal] = useState({
     isShown : false,
@@ -32,7 +34,9 @@ const Home = () => {
 
         <button 
             className='w-16 h-16 flex items-center justify-center bg-primary hover:bg-blue-600 cursor-pointer rounded-2xl absolute right-10 bottom-10'
-            onClick={() => setOpenAddEditModal({ isShown: true, type: 'add', data: null })}
+            onClick={() => {
+                setOpenAddEditModal({ isShown: true, type: 'add', data: null });
+            }}
         >
             <MdAdd className='text-[32px] text-white' />
         </button>
@@ -42,13 +46,17 @@ const Home = () => {
             onRequestClose = {() => {}}
             style = {{
                 overlay: {
-                    backgroundColor : 'rgba(0,0,0,0,2)'
+                    backgroundColor : 'rgb(0 0 0 / 20%)',
                 },
             }}
             contentLabel = ''
-            className = 'w-[40%] max-h-3/4 bg-white rounded-md mx-autp mt-14 p-15 overflow-scroll'
+            className = 'w-[50%] max-h-3/4 bg-white rounded-md mx-auto mt-14 p-5 overflow-scroll'
         >
-            <AddEditNotes />
+            <AddEditNotes 
+                onClose={()=>{
+                    setOpenAddEditModal({ isShown:false, type: "add", data: null });
+                }}
+            />
         </Modal>
     </>
   )
