@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../../utils/axioInstance'
 import Toast from '../../components/ToastMessage/Toast'
 import EmptyCard from '../../components/EmptyCard/EmptyCard'
+import AddNoteImg from '../../assets/images/add-notes.svg'
 
 Modal.setAppElement('#root');
 
@@ -117,7 +118,12 @@ const Home = () => {
                         />
                     ))}
                 </div>
-            ) : (<EmptyCard />)}
+            ) : (
+                <EmptyCard 
+                    imgSrc={AddNoteImg} 
+                    message={`Start creating your first note! Click the 'Add' button to hot down your 
+                    thoughts, ideas, and reminders. Let's get started!`} />
+            )}
         </div>
 
         <button 
