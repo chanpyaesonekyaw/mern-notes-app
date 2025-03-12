@@ -6,6 +6,8 @@ import AddEditNotes from './AddEditNotes'
 import Modal from 'react-modal'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../../utils/axioInstance'
+import Toast from '../../components/ToastMessage/Toast'
+import EmptyCard from '../../components/EmptyCard/EmptyCard'
 
 Modal.setAppElement('#root');
 
@@ -16,10 +18,35 @@ const Home = () => {
     data : null,
   });
 
+  const [showToastMsg, setShowToastMsg] = useState({
+    isShown: false,
+    message: '',
+    type: 'add',
+  });
   const [allNotes, setAllNotes] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
 
+  const handleEdit = (noteDetails) => {
+    setOpenAddEditModal({ isShown: true, data: noteDetails, type: 'edit' });
+  };
+
+  const showToastMessage = (message, type) => {
+    setShowToastMsg({
+        isShown: true,
+        message: message,
+        type: type,
+    });
+  };
+
+  const handleCloseToast = () => {
+    setShowToastMsg({
+        isShown: false,
+        message: '',
+    });
+  };
+
+  //   Get User Info
   const getUserInfo = async () => {
     try{
         const response = await axiosInstance.get('/auth/get-user');
@@ -47,6 +74,23 @@ const Home = () => {
     }
   };
 
+  //   Delete note
+  const deleteNote = async (data) => {
+      const noteId = data._id;
+       try{
+        const response = await axiosInstance.delete('/notes/delete-note/' + noteId);
+  
+        if(response.data && !response.data.error){
+          showToastMessage('Note Deleted Successfully', 'delete');
+          getAllNotes();
+        }
+      }catch(error){
+          if(error.response && error.response.data && error.response.data.message){
+            console.log('An unexpected error occurred. Please try again.');
+          }
+      }
+  };
+
   useEffect(() => {
     getAllNotes();
     getUserInfo();
@@ -57,21 +101,23 @@ const Home = () => {
     <>
         <Navbar userInfo={ userInfo }/>
         <div className='container mx-auto'>
-            <div className='grid grid-cols-3 gap-3 mt-8'>
-                {allNotes.map((item, index)=>(
-                    <NoteCard 
-                        key={item._id}
-                        title = {item.title}
-                        date = {item.createdOn}
-                        content = {item.content}
-                        tags = {item.tags}
-                        isPinned={item.isPinned}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                        onPinNote={() => {}}
-                    />
-                ))}
-            </div>
+            {allNotes.length > 0 ? (
+                <div className='grid grid-cols-3 gap-3 mt-8'>
+                    {allNotes.map((item, index)=>(
+                        <NoteCard 
+                            key={item._id}
+                            title = {item.title}
+                            date = {item.createdOn}
+                            content = {item.content}
+                            tags = {item.tags}
+                            isPinned={item.isPinned}
+                            onEdit={() => handleEdit(item)}
+                            onDelete={() => deleteNote(item)}
+                            onPinNote={() => {}}
+                        />
+                    ))}
+                </div>
+            ) : (<EmptyCard />)}
         </div>
 
         <button 
@@ -96,12 +142,21 @@ const Home = () => {
         >
             <AddEditNotes 
                 type={openAddEditModal.type}
-                nodeData={openAddEditModal.data}
+                noteData={openAddEditModal.data}
                 onClose={()=>{
                     setOpenAddEditModal({ isShown:false, type: "add", data: null });
                 }}
+                getAllNotes={getAllNotes}
+                showToastMessage={showToastMessage}
             />
         </Modal>
+
+        <Toast 
+            isShown={showToastMsg.isShown}
+            message={showToastMsg.message}
+            type={showToastMsg.type}
+            onClose={handleCloseToast}
+        />
     </>
   )
 }

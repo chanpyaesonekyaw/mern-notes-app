@@ -1,24 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import TagInput from '../../components/Input/TagInput';
 import { MdClose } from 'react-icons/md';
+import axiosInstance from '../../utils/axioInstance';
 
-const AddEditNotes = ({ nodeData, type, onClose }) => {
+const AddEditNotes = ({ noteData, type, getAllNotes, onClose, showToastMessage }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]); // Tags should be an array
   const [error, setError] = useState(null);
 
-  const addNewNote = async () => {};
+  // Add Note
+  const addNewNote = async () => {
+    try{
+      const response = await axiosInstance.post('/notes/add-note', {
+        title: title,
+        content: content,
+        tags: tags,
+      });
 
-  const editNode = async () => {};
+      if(response.data && response.data.note){
+        showToastMessage('Note Added Successfully');
+        getAllNotes();
+        onClose();
+      }
+    }catch(error){
+        if(error.response && error.response.data && error.response.data.message){
+            setError(error.response.data.message);
+        }else{
+            setError('An unexpected error occurred. Please try again.');
+        }
+    }
+  };
+
+  // Edit Note
+  const editNode = async () => {
+    const noteId = noteData._id;
+     try{
+      const response = await axiosInstance.put('/notes/edit-note/' + noteId, {
+        title: title,
+        content: content,
+        tags: tags,
+      });
+
+      if(response.data && response.data.note){
+        showToastMessage('Note Updated Successfully');
+        getAllNotes();
+        onClose();
+      }
+    }catch(error){
+        if(error.response && error.response.data && error.response.data.message){
+          console.log('An unexpected error occurred. Please try again.');
+        }
+    }
+  };
 
   useEffect(() => {
-    if (nodeData) {
-      setTitle(nodeData.title || '');
-      setContent(nodeData.content || '');
-      setTags(nodeData.tags || []);
+    if (noteData) {
+      setTitle(noteData.title || '');
+      setContent(noteData.content || '');
+      setTags(noteData.tags || []);
     }
-  }, [nodeData]);
+  }, [noteData]);
 
   const handleAddNode = () => {
     if (!title.trim()) {
@@ -34,7 +76,6 @@ const AddEditNotes = ({ nodeData, type, onClose }) => {
     setError('');
     
     // Handle save logic here...
-    console.log({ title, content, tags, type });
 
     if(type === 'edit'){
         editNode();
