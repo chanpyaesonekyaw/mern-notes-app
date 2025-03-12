@@ -109,6 +109,22 @@ const Home = () => {
     }
   };
 
+  const updateIsPinned = async (noteData) => {
+    const noteId = noteData._id;
+     try{
+      const response = await axiosInstance.put('/notes/update-note-pinned/' + noteId, {
+        isPinned: !noteData.isPinned,
+      });
+
+      if(response.data && response.data.note){
+        showToastMessage('Note Updated Successfully');
+        getAllNotes();
+      }
+    }catch(error){
+        console.log('An unexpected error occurred. Please try again.');
+    }
+  }
+
   const handleClearSearch = () => {
     setIsSearch(false);
     getAllNotes();
@@ -137,14 +153,14 @@ const Home = () => {
                             isPinned={item.isPinned}
                             onEdit={() => handleEdit(item)}
                             onDelete={() => deleteNote(item)}
-                            onPinNote={() => {}}
+                            onPinNote={() => updateIsPinned(item)}
                         />
                     ))}
                 </div>
             ) : (
                 <EmptyCard 
                     imgSrc={AddNoteImg} 
-                    message={`Start creating your first note! Click the 'Add' button to hot down your 
+                    message={isSearch ? `Oops! No notes found matching your search.` : `Start creating your first note! Click the 'Add' button to hot down your 
                     thoughts, ideas, and reminders. Let's get started!`} />
             )}
         </div>
