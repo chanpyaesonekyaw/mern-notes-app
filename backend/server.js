@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from "cors";
 import { connectDB } from './config/db.js';
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { authenticateToken } from './utilities.js';
 import User from './models/user.model.js';
@@ -40,10 +41,12 @@ app.post('/create-account', async (req, res) => {
         return res.json({ error:true, message: 'User already exist' })
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User ({
         fullName,
         email,
-        password,
+        password: hashedPassword,
     });
 
     await user.save();
@@ -78,7 +81,9 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'User not found' });
     }
 
-    if (userInfo.email == email && userInfo.password == password){
+    const passwordMatch = await bcrypt.compare(password, userInfo.password);
+
+    if (email == userInfo.email && passwordMatch) {
         const user = { user: userInfo };
         const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
             expiresIn: '36000m',
@@ -89,11 +94,10 @@ app.post('/login', async (req, res) => {
             email,
             accessToken,
         });
-    }else{
+    } else {
         return res.json({
             error: true,
             message: 'Invalid Credentials',
-
         });
     }
 });
@@ -101,8 +105,8 @@ app.post('/login', async (req, res) => {
 // Get User
 app.get('/get-user', authenticateToken, async (req, res) => {
     const { user } = req.user;
-
-    const isUser = await User.findOne({ _id: user.id });
+    console.log(user);
+    const isUser = await User.findOne({ _id: user._id });
 
     if(!isUser){
         return res.sendStatus(401);
