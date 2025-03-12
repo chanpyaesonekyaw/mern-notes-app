@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
 import NoteCard from '../../components/Cards/NoteCard'
 import { MdAdd } from 'react-icons/md'
 import AddEditNotes from './AddEditNotes'
 import Modal from 'react-modal'
+import { useNavigate } from 'react-router-dom'
+import axiosInstance from '../../utils/axioInstance'
 
 Modal.setAppElement('#root');
 
@@ -13,22 +15,62 @@ const Home = () => {
     type : 'add',
     data : null,
   });
+
+  const [allNotes, setAllNotes] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
+  const navigate = useNavigate();
+
+  const getUserInfo = async () => {
+    try{
+        const response = await axiosInstance.get('/auth/get-user');
+        if (response.data && response.data.user){
+            setUserInfo(response.data.user);
+        }
+    }catch(error){
+        if(error.response.status == 401){
+            localStorage.clear();
+            navigate('/login');
+        }
+    }
+  };
+
+  //   Get all notes
+  const getAllNotes = async () => {
+    try{
+        const response = await axiosInstance.get('/notes/get-all-notes');
+
+        if(response.data && response.data.notes){
+            setAllNotes(response.data.notes);
+        }
+    } catch (error){
+        console.log('An unexpected error occured. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    getAllNotes();
+    getUserInfo();
+    return () => {};
+  }, []);
   
   return (
     <>
-        <Navbar />
+        <Navbar userInfo={ userInfo }/>
         <div className='container mx-auto'>
             <div className='grid grid-cols-3 gap-3 mt-8'>
-                <NoteCard 
-                    title = 'Meeting on 7th Apirl'
-                    date = '9 March 2025'
-                    content = 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia cupiditate iure eveniet saepe omnis dignissimos sunt repellat, totam magni nostrum modi sequi necessitatibus delectus repudiandae in sint labore! Sed, qui.'
-                    tags = '#Meeting'
-                    isPinned={true}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
-                    onPinNote={() => {}}
-                />
+                {allNotes.map((item, index)=>(
+                    <NoteCard 
+                        key={item._id}
+                        title = {item.title}
+                        date = {item.createdOn}
+                        content = {item.content}
+                        tags = {item.tags}
+                        isPinned={item.isPinned}
+                        onEdit={() => {}}
+                        onDelete={() => {}}
+                        onPinNote={() => {}}
+                    />
+                ))}
             </div>
         </div>
 

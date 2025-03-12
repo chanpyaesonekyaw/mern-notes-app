@@ -11,8 +11,8 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/notes', noteRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/notes', noteRoutes);
 
 app.listen(PORT, () => {
     connectDB();  
