@@ -9,6 +9,7 @@ import axiosInstance from '../../utils/axioInstance'
 import Toast from '../../components/ToastMessage/Toast'
 import EmptyCard from '../../components/EmptyCard/EmptyCard'
 import AddNoteImg from '../../assets/images/add-notes.svg'
+import HealthCheck from '../../components/HealthCheck'
 
 Modal.setAppElement('#root');
 
@@ -139,6 +140,13 @@ const Home = () => {
   return (
     <>
         <Navbar userInfo={ userInfo } onSearchNote={onSearchNote} handleClearSearch={handleClearSearch} />
+
+        {/* Add HealthCheck component for debugging */}
+        {process.env.NODE_ENV === 'development' && (
+            <div className="max-w-md mx-auto mt-4">
+                <HealthCheck />
+            </div>
+        )}
 
         <div className='container mx-auto'>
             {allNotes.length > 0 ? (
