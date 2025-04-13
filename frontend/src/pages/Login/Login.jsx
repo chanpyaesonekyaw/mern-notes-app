@@ -1,16 +1,31 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
 import PasswordInput from '../../components/Input/PasswordInput'
 import { Link, useNavigate } from 'react-router-dom'
 import { validateEmail } from '../../utils/helper'
 import axiosInstance from '../../utils/axioInstance'
+import { setToken, setUser, isAuthenticated } from '../../utils/tokenUtils'
+import Toast from '../../components/ToastMessage/Toast'
 
-const login = () => {
+const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showToast, setShowToast] = useState({
+        isShown: false,
+        message: '',
+        type: 'error'
+    });
 
     const navigate = useNavigate();
+
+    // Check if user is already logged in
+    useEffect(() => {
+        if (isAuthenticated()) {
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -24,7 +39,9 @@ const login = () => {
             setError('Please enter the password.');
             return;
         }
+        
         setError('');
+        setIsLoading(true);
 
         // Login Api Call 
         try{
@@ -34,17 +51,54 @@ const login = () => {
             });
 
             if(response.data && response.data.accessToken){
-                localStorage.setItem('token', response.data.accessToken);
-                navigate('/dashboard');
+                // Save token and user data
+                setToken(response.data.accessToken);
+                
+                // If user data is returned, save it
+                if (response.data.user) {
+                    setUser(response.data.user);
+                }
+                
+                // Show success message
+                setShowToast({
+                    isShown: true,
+                    message: 'Login successful!',
+                    type: 'success'
+                });
+                
+                // Redirect to dashboard after a short delay
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 1000);
             }
-        }catch(error){
+        } catch(error) {
             if(error.response && error.response.data && error.response.data.message){
                 setError(error.response.data.message);
-            }else{
+                setShowToast({
+                    isShown: true,
+                    message: error.response.data.message,
+                    type: 'error'
+                });
+            } else {
                 setError('An unexpected error occurred. Please try again.');
+                setShowToast({
+                    isShown: true,
+                    message: 'An unexpected error occurred. Please try again.',
+                    type: 'error'
+                });
             }
+        } finally {
+            setIsLoading(false);
         }
     }
+
+    const handleCloseToast = () => {
+        setShowToast({
+            isShown: false,
+            message: '',
+            type: 'error'
+        });
+    };
 
     return (
         <>
@@ -60,13 +114,21 @@ const login = () => {
                             className='input-box' 
                             value={email}
                             onChange={(e)=> setEmail(e.target.value)}
+                            disabled={isLoading}
                         />
                         <PasswordInput 
                             value={password}
                             onChange={(e)=> setPassword(e.target.value)}
+                            disabled={isLoading}
                         />
                         {error && <p className='text-red-500 text-sm pb-1'>{error}</p>}
-                        <button type='submit' className='btn-primary cursor-pointer'>Login</button>
+                        <button 
+                            type='submit' 
+                            className='btn-primary cursor-pointer'
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Logging in...' : 'Login'}
+                        </button>
 
                         <p className='text-sm text-center mt-3'>
                             Not register yet?{' '}
@@ -77,8 +139,16 @@ const login = () => {
                     </form>
                 </div>
             </div>
+            
+            {showToast.isShown && (
+                <Toast 
+                    message={showToast.message} 
+                    type={showToast.type} 
+                    onClose={handleCloseToast} 
+                />
+            )}
         </>
     )
 }
 
-export default login
+export default Login

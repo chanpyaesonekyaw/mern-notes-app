@@ -28,3 +28,17 @@ export const getUser = async (req, res) => {
     if (!user) return res.sendStatus(401);
     res.json({ user, message: '' });
 };
+
+export const logout = async (req, res) => {
+    // In a JWT-based authentication system, the server doesn't maintain session state
+    // The client is responsible for removing the token
+    // This endpoint is mainly for logging purposes or if you want to invalidate tokens in the future
+    
+    // You could implement token blacklisting here if needed
+    // For now, we'll just return a success message
+    
+    res.json({ 
+        error: false, 
+        message: 'Logout successful' 
+    });
+};

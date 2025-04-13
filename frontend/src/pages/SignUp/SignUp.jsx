@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import PasswordInput from '../../components/Input/PasswordInput';
 import { Link, useNavigate } from 'react-router-dom';
 import { validateEmail } from '../../utils/helper';
 import axiosInstance from '../../utils/axioInstance';
+import { setToken, setUser, isAuthenticated } from '../../utils/tokenUtils';
+import Toast from '../../components/ToastMessage/Toast';
 
 const SignUp = () => {
   const [name, setName] = useState('');
@@ -11,8 +13,21 @@ const SignUp = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showToast, setShowToast] = useState({
+    isShown: false,
+    message: '',
+    type: 'error'
+  });
 
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -43,32 +58,74 @@ const SignUp = () => {
     }
 
     setError('');
+    setIsLoading(true);
 
     // Sign-Up API Call
-    try{
+    try {
       const response = await axiosInstance.post('/auth/register', {
-          fullName: name,
-          email: email,
-          password: password,
+        fullName: name,
+        email: email,
+        password: password,
       });
 
-      if(response.data && response.data.error){
+      if (response.data && response.data.error) {
         setError(response.data.message);
+        setShowToast({
+          isShown: true,
+          message: response.data.message,
+          type: 'error'
+        });
         return;
       }
 
-      if(response.data && response.data.accessToken){
-          localStorage.setItem('token', response.data.accessToken);
-          navigate('/dashboard');
-      }
-    }catch(error){
-        if(error.response && error.response.data && error.response.data.message){
-            setError(error.response.data.message);
-        }else{
-            setError('An unexpected error occurred. Please try again.');
+      if (response.data && response.data.accessToken) {
+        // Save token and user data
+        setToken(response.data.accessToken);
+        
+        // If user data is returned, save it
+        if (response.data.user) {
+          setUser(response.data.user);
         }
+        
+        // Show success message
+        setShowToast({
+          isShown: true,
+          message: 'Registration successful!',
+          type: 'success'
+        });
+        
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      }
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+        setShowToast({
+          isShown: true,
+          message: error.response.data.message,
+          type: 'error'
+        });
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+        setShowToast({
+          isShown: true,
+          message: 'An unexpected error occurred. Please try again.',
+          type: 'error'
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
+  };
+
+  const handleCloseToast = () => {
+    setShowToast({
+      isShown: false,
+      message: '',
+      type: 'error'
+    });
   };
 
   return (
@@ -85,6 +142,7 @@ const SignUp = () => {
               className="input-box"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={isLoading}
             />
 
             <input
@@ -93,24 +151,30 @@ const SignUp = () => {
               className="input-box"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
             />
 
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              disabled={isLoading}
             />
 
             <PasswordInput
+              placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm Password"
+              disabled={isLoading}
             />
 
             {error && <p className="text-red-500 text-sm pb-1">{error}</p>}
 
-            <button type="submit" className="btn-primary cursor-pointer">
-              Sign Up
+            <button
+              type="submit"
+              className="btn-primary cursor-pointer"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing up...' : 'Sign Up'}
             </button>
 
             <p className="text-sm text-center mt-3">
@@ -122,6 +186,14 @@ const SignUp = () => {
           </form>
         </div>
       </div>
+      
+      {showToast.isShown && (
+        <Toast 
+          message={showToast.message} 
+          type={showToast.type} 
+          onClose={handleCloseToast} 
+        />
+      )}
     </>
   );
 };
